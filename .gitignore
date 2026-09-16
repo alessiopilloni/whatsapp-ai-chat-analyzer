@@ -5,6 +5,7 @@
 !/.gitignore
 !/requirements.txt
 !/*.py
+!/README.md
 
 # Escludi ambienti e cache Python anche se annidati.
 .venv/
