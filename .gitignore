@@ -1,0 +1,12 @@
+# Per impostazione predefinita non versionare nulla.
+*
+
+# Mantieni solo il codice e le dipendenze nella radice.
+!/.gitignore
+!/requirements.txt
+!/*.py
+
+# Escludi ambienti e cache Python anche se annidati.
+.venv/
+__pycache__/
+*.pyc
