@@ -13,13 +13,14 @@ prima di ogni analisi intelligente, serve ordinare e organizzare le informazioni
 import re
 from pathlib import Path
 
-# Espressione regolare per riconoscere una riga di chat WhatsApp del tipo:
-# "12/12/24, 20:30 - Nome: testo del messaggio"
-# Serve a separare automaticamente timestamp, mittente e contenuto.
+# Pattern fondamentale per trasformare l'export WhatsApp in dati strutturati.
+# La forma "data, ora - mittente: messaggio" è costante e permette di isolare
+# timestamp, autore e contenuto senza dover usare parser HTML o librerie esterne.
 MESSAGE_RE = re.compile(r"^(\d{2}/\d{2}/\d{2,4},\s\d{2}:\d{2})\s-\s([^:]+):\s?(.*)$")
 
-# Riconosce nomi di file presenti nel testo, come immagini, audio, video o documenti.
-# Questi nomi vengono poi collegati ai file realmente presenti nella cartella.
+# Questo regex identifica allegati citati nel messaggio, come foto, audio, video
+# o documenti. L'idea del progetto è collegare il testo della conversazione ai file
+# realmente presenti nella cartella, così da avere un archivio navigabile e completo.
 FILE_RE = re.compile(r"[\u200e\u200f]?([\w .()'\-]+\.(?:opus|mp3|m4a|aac|wav|jpg|jpeg|png|webp|gif|bmp|mp4|mov|avi|mkv|webm|3gp|pdf|doc|docx|xls|xlsx|ppt|pptx|txt|md|csv|json|log|xml|html|htm|rtf))", re.I)
 
 # Trova link HTTP/HTTPS nel testo di un messaggio per renderli cliccabili.
@@ -43,8 +44,10 @@ def empty_chat_state():
 
 def find_chat_file(folder):
     """Trova il file .txt principale della chat nella cartella selezionata."""
-    # Cerca tutti i file di testo e preferisce quelli che hanno "chat" nel nome,
-    # escludendo eventuali file di backup o versioni sincronizzate.
+    # In un export WhatsApp esistono spesso copie o file temporanei: per questo
+    # il codice preferisce i file con "chat" nel nome, ma esclude le versioni
+    # sincronizzate. Questa scelta rende l'analisi più affidabile e meno soggetta
+    # a dati duplicati o non rappresentativi.
     candidates = sorted(Path(folder).glob("*.txt"))
     preferred = [
         path for path in candidates
@@ -69,7 +72,9 @@ def parse_chat_log(content, folder):
     """Trasforma il testo della chat in una lista di messaggi strutturati."""
     messages = []
     current = None
-    # Mappa i file della cartella in modo da verificare se un allegato esiste davvero.
+    # Qui inizia la vera trasformazione: i messaggi grezzi diventano oggetti con
+    # timestamp, mittente, testo, allegati e link. È il passaggio che rende la chat
+    # utilizzabile da un'app web, da un database o da una successiva analisi IA.
     files = {path.name: path for path in Path(folder).iterdir() if path.is_file()}
 
     def finish(message):
@@ -99,7 +104,9 @@ def parse_chat_log(content, folder):
         ]
         messages.append(message)
 
-    # Scorre ogni riga del file e crea un messaggio quando trova una nuova voce.
+    # Il loop scorre la chat riga per riga. Quando incontra una nuova voce del tipo
+    # "data - nome: testo", chiude il messaggio precedente e avvia il nuovo. In questo
+    # modo si preserva l'ordine cronologico e si mantiene la coerenza della conversazione.
     for raw_line in content.splitlines():
         match = MESSAGE_RE.match(raw_line)
         if match:

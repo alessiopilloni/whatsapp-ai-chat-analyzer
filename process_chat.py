@@ -64,6 +64,9 @@ def ensure_ffmpeg_for_whisper():
 
 def load_audio_transcriptions():
     """Usa l'intelligenza artificiale Whisper per trascrivere tutti gli audio della cartella."""
+    # Questa è la fase più avanzata del progetto: i file vocali vengono trasformati in
+    # testo e diventano parte della conversazione. In sede di tesina, questa sezione
+    # rappresenta l'uso concreto dell'IA come supporto all'analisi di messaggi non testuali.
     ensure_ffmpeg_for_whisper()
 
     # Sceglie GPU se disponibile, altrimenti CPU.
@@ -107,6 +110,12 @@ def collect_media_files():
 
 def sync_media_message(message, audio_transcriptions=None, media_files=None):
     """Inserisce nel testo del messaggio il nome e la trascrizione di audio o allegati collegati."""
+    # Questa funzione è il punto di integrazione tra i tre livelli del sistema:
+    # - chat testuale,
+    # - file multimediali presenti nella cartella,
+    # - trascrizioni generate dall'IA.
+    # L'obiettivo è rendere la conversazione "completa" anche quando i contenuti sono
+    # vocali o allegati non testuali.
     audio_transcriptions = audio_transcriptions or {}
     media_files = media_files or {"images": set(), "videos": set(), "documents": set()}
 
@@ -148,7 +157,9 @@ def sync_media_message(message, audio_transcriptions=None, media_files=None):
             continue
 
     # Se non sono stati trovati riferimenti espliciti, cerca comunque un audio
-    # il cui nome è citato nel messaggio e lo aggiunge in fondo.
+    # il cui nome è citato nel messaggio e lo aggiunge in fondo. Questo fallback
+    # rende il sistema più robusto rispetto a export leggermente diversi e mantiene
+    # l'informazione anche quando la struttura del messaggio non è perfetta.
     if not extra_content:
         for audio_file, text in audio_transcriptions.items():
             if audio_file in message:
@@ -207,7 +218,9 @@ def main():
     parser.add_argument("folder", nargs="?", default=".", help="Cartella dell'export WhatsApp")
     args = parser.parse_args()
 
-    # Il programma lavora dentro la cartella scelta dall'utente.
+    # Il programma lavora dentro la cartella scelta dall'utente: l'idea è ottenere
+    # un ambiente locale e controllato dove la chat, i media e le trascrizioni possono
+    # essere elaborati come un unico dataset coerente.
     folder = os.path.abspath(os.path.expanduser(args.folder))
     os.chdir(folder)
 
@@ -217,6 +230,10 @@ def main():
     chat_file = find_chat_file()
     chat_data = parse_chat_file(chat_file) if chat_file else []
     df = pd.DataFrame(chat_data)
+
+    # A questo punto la pipeline lavora su un DataFrame: la conversazione viene
+    # arricchita in modo da trasformare una chat semplice in un archivio analizzabile
+    # e facilmente consultabile.
 
     if df.empty:
         print("Nessun messaggio trovato o file di chat non presente.")
